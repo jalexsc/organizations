@@ -1,0 +1,1195 @@
+import json
+import uuid
+import xlrd
+import os
+import xlwt
+import xlsxwriter
+import openpyxl
+import os.path
+import datetime
+from datetime import datetime
+import requests
+import csv
+import io
+
+class purchaseOrder():
+    def __init__(self,poNumber,vendor,orderType,notas,Order_status):
+        self.poNumber=poNumber
+        self.vendor=vendor
+        self.orderType=orderType
+        #self.notes=notas
+        self.workflowStatus=Order_status
+        #self.tags="EBSCOTEST"   
+
+
+def floatHourToTime(fh):
+    h, r = divmod(fh, 1)
+    m, r = divmod(r*60, 1)
+    return (
+        int(h),
+        int(m),
+        int(r*60),
+    )
+def order_format(of,client):
+    orfor=[]
+    #UMA Order Material type mappings
+    if client=="UM":
+        if of=="2D":
+            orfor.append("Physical Resource")
+            orfor.append("Image")
+        elif of=="AC":
+            orfor.append("Physical Resource")
+            orfor.append("Audiocassette")
+        elif of=="AR":
+            orfor.append("Physical Resource")
+            orfor.append("Archival Material")
+        elif of=="CD":
+            orfor.append("Physical Resource")
+            orfor.append("CD-ROM")
+        elif of=="CN":
+            orfor.append("Physical Resource")
+            orfor.append("Serial")
+        elif of=="DB":
+            orfor.append("Electronic Resource")
+            orfor.append("Database")
+        elif of=="DV":
+            orfor.append("Physical Resource")
+            orfor.append("DVD Blu-ray")
+        elif of=="EB":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Book")
+        elif of=="EJ":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Journal")
+        elif of=="EP":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Book Package")
+        elif of=="FL":
+            orfor.append("Physical Resource")
+            orfor.append("Film")
+        elif of=="GP":
+            orfor.append("Physical Resource")
+            orfor.append("Government Publication")
+        elif of=="IM":
+            orfor.append("Physical Resource")
+            orfor.append("Image")
+        elif of=="IS":
+            orfor.append("Electronic Resource")
+            orfor.append("Admin")
+        elif of=="JP":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Journal Package")
+        elif of=="LP":
+            orfor.append("Physical Resource")
+            orfor.append("LP Phonorecord")
+        elif of=="M":
+            orfor.append("Physical Resource")
+            orfor.append("Book")
+        elif of=="MC":
+            orfor.append("Physical Resource")
+            orfor.append("Audio CD")
+        elif of=="MF":
+            orfor.append("Physical Resource")
+            orfor.append("Microform")
+        elif of=="MP":
+            orfor.append("Physical Resource")
+            orfor.append("Map")
+        elif of=="NE":
+            orfor.append("Physical Resource")
+            orfor.append("Newspaper")
+        elif of=="PJ":
+            orfor.append("Physical Resource")
+            orfor.append("Journal")
+        elif of=="SC":
+            orfor.append("Physical Resource")
+            orfor.append("Serial")
+        elif of=="SE":
+            orfor.append("Physical Resource")
+            orfor.append("Database")
+        elif of=="ST":
+            orfor.append("Physical Resource")
+            orfor.append("Streaming Video or Streaming Audio")
+        elif of=="T":
+            orfor.append("Physical Resource")
+            orfor.append("Admin")
+        elif of=="TH":
+            orfor.append("Physical Resource")
+            orfor.append("Thesis/Dissertation")
+        elif of=="unspecified":
+            orfor.append("Physical Resource")
+            orfor.append("unspecified")
+
+#SMC order material type Mappings
+    elif client=="SC":
+        if of=="A":
+            orfor.append("Physical Resource")
+            orfor.append("Audio CD")
+        elif of=="AG":
+            orfor.append("Physical Resource")
+            orfor.append("Database")
+        elif of=="B":
+            orfor.append("Physical Resource")
+            orfor.append("Book")
+        elif of=="C":
+            orfor.append("Physical Resource")
+            orfor.append("Map")
+        elif of=="D":
+            orfor.append("Electronic Resource")
+            orfor.append("Data File")
+        elif of=="DB":
+            orfor.append("Electronic Resource")
+            orfor.append("Database")
+        elif of=="E":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Journal")
+        elif of=="EB":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Book")
+        elif of=="EJ":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Journal")
+        elif of=="M":
+            orfor.append("Physical Resource")
+            orfor.append("Microform")
+        elif of=="N":
+            orfor.append("Physical Resource")
+            orfor.append("Newspaper")
+        elif of=="P":
+            orfor.append("Physical Resource")
+            orfor.append("Journal")
+        elif of=="R":
+            orfor.append("Physical Resource")
+            orfor.append("CD-ROM")
+        elif of=="S":
+            orfor.append("Physical Resource")
+            orfor.append("Serial")
+        elif of=="V":
+            orfor.append("Physical Resource")
+            orfor.append("DVD Blu-ray")
+        elif of=="Z":
+            orfor.append("Physical Resource")
+            orfor.append("Score")
+        elif of=="unspecified":
+            orfor.append("Physical Resource")
+            orfor.append("unspecified")
+
+#MHC order material type mappings
+    elif client=="MH":
+        if of=="A":
+            orfor.append("Physical Resource")
+            orfor.append("Audio CD")
+        elif of=="B":
+            orfor.append("Physical Resource")
+            orfor.append("Book")
+        elif of=="C":
+            orfor.append("Physical Resource")
+            orfor.append("Map")
+        elif of=="DS":
+            orfor.append("Electronic Resource")
+            orfor.append("Data File")
+        elif of=="ED":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Journal or E-Book?")
+        elif of=="EQ":
+            orfor.append("Electronic Resource")
+            orfor.append("Equipment")
+        elif of=="ER":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Journal or E-Book?")
+        elif of=="L":
+            orfor.append("Physical Resource")
+            orfor.append("Book")
+        elif of=="M":
+            orfor.append("Physical Resource")
+            orfor.append("Microform")
+        elif of=="MM":
+            orfor.append("Physical Resource")
+            orfor.append("unspecified")
+        elif of=="NP":
+            orfor.append("Physical Resource")
+            orfor.append("Newpaper")
+        elif of=="OT":
+            orfor.append("Physical Resource")
+            orfor.append("Admin")
+        elif of=="P":
+            orfor.append("Physical Resource")
+            orfor.append("Journal")
+        elif of=="PR":
+            orfor.append("Physical Resource")
+            orfor.append("unspecified")
+        elif of=="S":
+            orfor.append("Physical Resource")
+            orfor.append("Serial")
+        elif of=="SC":
+            orfor.append("Physical Resource")
+            orfor.append("Score")
+        elif of=="T":
+            orfor.append("Physical Resource")
+            orfor.append("E-Thesis/Dissertation")
+        elif of=="V":
+            orfor.append("Physical Resource")
+            orfor.append("DVD Blu-ray")
+        elif of=="unspecified":
+            orfor.append("Physical Resource")
+            orfor.append("unspecified")
+        elif of=="EJ":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Journal")
+        elif of=="EK":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Book Package")
+        elif of=="DB":
+            orfor.append("Electronic Resource")
+            orfor.append("Database")
+        elif of=="SV":
+            orfor.append("Electronic Resource")
+            orfor.append("Streaming Video")
+        elif of=="EB":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Book")
+        elif of=="EN":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Newspaper")
+        elif of=="EP":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Journal Package")
+        elif of=="ER":
+            orfor.append("Electronic Resource")
+            orfor.append("Data File")
+        elif of=="SA":
+            orfor.append("Electronic Resource")
+            orfor.append("Streaming Audio")
+        elif of=="unspecified":
+            orfor.append("Physical Resource")
+            orfor.append("unspecified")
+#HAM order material type mapping
+    elif client=="HC":
+        if of=="A":
+            orfor.append("Physical Resource")
+            orfor.append("Audio CD")
+        elif of=="E":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Book")
+        elif of=="M":
+            orfor.append("Physical Resource")
+            orfor.append("Book")
+        elif of=="O":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Journal")
+        elif of=="S":
+            orfor.append("Physical Resource")
+            orfor.append("Serial")
+        elif of=="V":
+            orfor.append("Physical Resource")
+            orfor.append("DVD Blu-ray")
+        elif of=="X":
+            orfor.append("Physical Resource")
+            orfor.append("unspecified")
+        elif of=="Z":
+            orfor.append("Electronic Resource")
+            orfor.append("Database")
+        elif of=="unspecified":
+            orfor.append("Physical Resource")
+            orfor.append("unspecified")
+# AMH Order Material Type
+    elif client=="AC":
+        if of=="A":
+            orfor.append("Physical Resource")
+            orfor.append("Audio CD")
+        elif of=="M":
+            orfor.append("Electronic Resource")
+            orfor.append("Book")
+        elif of=="S":
+            orfor.append("Physical Resource")
+            orfor.append("Serial")
+        elif of=="SE":
+            orfor.append("Electronic Resource")
+            orfor.append("E-Journal")
+        elif of=="SP":
+            orfor.append("P/E Mix")
+            orfor.append("E-Journal")
+        elif of=="V":
+            orfor.append("Physical Resource")
+            orfor.append("DVD Blu-ray")
+        elif of=="unspecified":
+            orfor.append("Physical Resource")
+            orfor.append("unspecified")
+    return orfor
+
+def billShipto(unit):
+    uni=""
+    if unit=="UM":
+        uni="8f5a5e19-7d1f-4bf4-a45b-4a188c774143"
+    elif unit=="SC":
+        uni="21b0b350-fd8f-4336-8ea7-00945e0e9005"
+    elif unit=="MH":
+        uni="f9343f67-bb87-455a-a157-8d03658c2d02"
+    elif unit=="HC":
+        uni="dba25f27-2495-4d85-ba12-aab28f27f205"
+    elif unit=="AC":
+        uni="2acd9ee9-f2f0-45e1-9fa7-f1d2a13605dd"
+    return uni
+
+def date_stamp(ilsdate):
+    dt=""
+    if (ilsdate.find("/")>=0):
+        dt=ilsdate
+        dia=dt[0:2]
+        mes=dt[3:5]
+        ano=dt[6:10]
+        dt=ano+"-"+mes+"-"+dia+"T"+"00:00:00+0000"
+    elif (ilsdate.find(".")>=0):
+        dt = datetime.fromordinal(datetime(1900, 1, 1).toordinal() + int(ilsdate) - 2)
+        hour, minute, second = floatHourToTime(ilsdate % 1)
+        dt = str(dt.replace(hour=hour, minute=minute,second=second))+".000+0000" #Approbal by
+        #2019-12-12T10:11:16.449+0000
+        dt=dt.replace(" ","T")
+        renewalDate=dt
+    elif (ilsdate=="0"):
+        dt=""
+    else:
+        dt=ilsdate
+        dia=dt[6:9]
+        mes=dt[4:6]
+        ano=dt[0:4]
+        dt=ano+"-"+mes+"-"+dia+"T"+"00:00:00+0000"
+    return dt
+
+def acquisition_unit(aqunit):
+    if aqunit=="AC":
+       adqui="155e37bb-c5ae-4179-8a24-a6b625ff96f7"
+    elif aqunit=="HC":
+        adqui="c9607f4b-2c99-4a41-941a-34b8624a80e1"
+    elif aqunit=="MH":
+        adqui="32a2bcc6-0c65-437d-a7d7-17bf8785ec4d"
+    elif aqunit=="SC":
+        adqui="b17b9e6b-82bb-4f97-b3e7-757e4e5aeb61"
+    elif aqunit=="UM":
+        adqui="7e8d460a-93dc-40b4-a1b7-f4a85a0a0dba"
+
+    return adqui
+
+def exitfile(arch):    
+    if os.path.isfile(arch):
+        print ("File exist")
+        os.remove(arch)
+    else:
+        print ("File not exist")
+
+def price(cost):
+    if cost=="":
+        cost=0.01
+    elif cost=="0.00":
+        cost=0.01
+    return cost
+
+def search(fileB,code_search):
+    idlicense=""
+    foundc=False
+    with open(fileB,'r',encoding = 'utf-8') as h:
+        for lineh in h:
+            if (lineh.find(code_search) != -1):
+                #print(lineh)
+                foundc=True
+                if (foundc):                    
+                    idlicense=lineh[8:44]
+                    break
+    if (foundc):
+        return idlicense
+    else:
+        idlicense="No Vendor"
+        return idlicense
+
+def is_empty(data_structure):
+    if data_structure:
+        print("No está vacía")
+        return False
+    else:
+        print("Está vacía")
+        return True
+
+def notes_tupla(noteTosave):
+    notes=[]
+    if noteTosave[4]:
+       notes.append("Order Number 1: "+noteTosave[4].strip()+"\n")
+    if noteTosave[5]:
+       notes.append("Order Number 2: "+noteTosave[5].strip()+"\n")
+    if noteTosave[6]:
+       notes.append("Order Group: "+noteTosave[6].strip()+"\n")
+    if noteTosave[7]:
+       notes.append("Library Note: "+noteTosave[7].strip()+"\n")
+    return notes
+
+def instructionsVendor(l):
+    ivendor=""
+    if (l):
+        ivendor=l
+    return ivendor
+                       
+def get_OrgId(orgname):
+        dic={}
+        #pathPattern="/organizations-storage/organizations" #?limit=9999&query=code="
+        pathPattern="/organizations/organizations" #?limit=9999&query=code="
+        okapi_url="https://okapi-fivecolleges-sandbox.folio.ebsco.com"
+        okapi_token="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJlYnNjb01pZ3JhdGlvbiIsInVzZXJfaWQiOiIyYmQ3NTBiOS0xMzYyLTQ4MDctYmQ3My0yYmU5ZDhkNjM0MzYiLCJpYXQiOjE2MDI1NTA2MDksInRlbmFudCI6ImZzMDAwMDEwMDYifQ.jnT-wDKlXAUbAKr9L5uzESApkJuGreYKEb1RcZH2URc"
+        okapi_tenant="fs00001006"
+        okapi_headers = {"x-okapi-token": okapi_token,"x-okapi-tenant": okapi_tenant,"content-type": "application/json"}
+        length="1"
+        start="1"
+        element="organizations"
+        query=f"query=code=="
+        #/organizations-storage/organizations?query=code==UMPROQ
+        paging_q = f"?{query}"+orgname
+        path = pathPattern+paging_q
+        #data=json.dumps(payload)
+        url = okapi_url + path
+        req = requests.get(url, headers=okapi_headers)
+        idorg=[]
+        if req.status_code != 201:
+            json_str = json.loads(req.text)
+            total_recs = int(json_str["totalRecords"])
+            if (total_recs!=0):
+                rec=json_str[element]
+                #print(rec)
+                l=rec[0]
+                if 'id' in l:
+                    idorg.append(l['id'])
+                    #idorg.append(l['name'])
+        if len(idorg)==0:
+            #Undefined
+            return "a49e02e1-8afa-407c-aa61-99e8a69c7cac"
+        else:
+            return idorg
+#END
+def get_funId(fund_name):
+        dic={}
+        #pathPattern="/organizations-storage/organizations" #?limit=9999&query=code="
+        pathPattern="/finance/funds" #?limit=9999&query=code="
+        okapi_url="https://okapi-ua.folio.ebsco.com"
+        okapi_token="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmb2xpbyIsInVzZXJfaWQiOiJkOTE2ZTg4My1mOGYxLTQxODgtYmMxZC1mMGRjZTE1MTFiNTAiLCJpYXQiOjE1OTg1NDY2MzIsInRlbmFudCI6ImZzMDAwMDEwMDUifQ.aptR-bH8IbePZCdoGd3lomRI4-cI2jbK4AMmyAU2AOM"
+        okapi_tenant="fs00001005"
+        okapi_headers = {"x-okapi-token": okapi_token,"x-okapi-tenant": okapi_tenant,"content-type": "application/json"}
+        length="1"
+        start="1"
+        element="funds"
+        query=f"query=name=="
+        #/finance/funds?query=name==UMPROQ
+        search='"'+fund_name+'"'
+        #paging_q = f"?{query}"+search
+        paging_q = f"?{query}"+search
+        path = pathPattern+paging_q
+        #data=json.dumps(payload)
+        url = okapi_url + path
+        req = requests.get(url, headers=okapi_headers)
+        idfund=[]
+        if req.status_code != 201:
+            json_str = json.loads(req.text)
+            total_recs = int(json_str["totalRecords"])
+            if (total_recs!=0):
+                rec=json_str[element]
+                #print(rec)
+                l=rec[0]
+                if 'id' in l:
+                    idfund.append(l['id'])
+                    idfund.append(l['name'])
+        return idfund
+#END
+
+def get_title(title_hrid):
+        dic={}
+        #pathPattern="/instance-storage/instances" #?limit=9999&query=code="
+        #https://okapi-ua.folio.ebsco.com/instance-storage/instances?query=hrid=="264227"
+        pathPattern="/instance-storage/instances" #?limit=9999&query=code="
+        okapi_url="https://okapi-fivecolleges-sandbox.folio.ebsco.com"
+        okapi_token="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJlYnNjb01pZ3JhdGlvbiIsInVzZXJfaWQiOiIyYmQ3NTBiOS0xMzYyLTQ4MDctYmQ3My0yYmU5ZDhkNjM0MzYiLCJpYXQiOjE2MDMxOTY5MTksInRlbmFudCI6ImZzMDAwMDEwMDYifQ.44-JmfKuHg--4f1X56VxzbY0vmgiA0eZzxhWqXTAZC0"
+        okapi_tenant="fs00001006"
+        okapi_headers = {"x-okapi-token": okapi_token,"x-okapi-tenant": okapi_tenant,"content-type": "application/json"}
+        length="1"
+        start="1"
+        element="instances"
+        query=f"query=hrid=="
+        #/finance/funds?query=name==UMPROQ
+        search='"'+title_hrid+'"'
+        #paging_q = f"?{query}"+search
+        paging_q = f"?{query}"+search
+        path = pathPattern+paging_q
+        #data=json.dumps(payload)
+        url = okapi_url + path
+        req = requests.get(url, headers=okapi_headers)
+        idhrid=[]
+        if req.status_code != 201:
+            json_str = json.loads(req.text)
+            total_recs = int(json_str["totalRecords"])
+            if (total_recs!=0):
+                rec=json_str[element]
+                #print(rec)
+                l=rec[0]
+                if 'id' in l:
+                    idhrid.append(l['id'])
+                    idhrid.append(l['title'])            
+        return idhrid
+#END
+
+def get_locId(orgname):
+
+    if orgname== "UM":
+        idorg="e87c933e-b136-4d07-85c3-37f49e583fa9"
+    elif orgname== "SC":
+        idorg="6382e0b7-debb-4067-9ecd-e4dcd6253ee2"
+    elif orgname=="MH":
+        idorg="100532ff-f972-47f4-ab67-5bf44c4d648e"
+    elif orgname=="HC":
+       idorg="8e76446a-fe15-46af-aabf-3939c249307f"
+    elif orgname== "AC":
+       idorg="7c25ce2b-db09-4e35-99df-fa6a4c07a70d"
+    return idorg
+######
+#PURCHASE METHOD 
+####
+
+def purchase_method(mc,client):
+    PurchaseMethod=""
+#UMA method of acquisition mappings
+    if client=="UM":
+        if mc=="P":
+            PurchaseMethod="Purchase"
+        elif mc=="G":
+            PurchaseMethod="Gift"
+        elif mc=="AF":
+            PurchaseMethod="Purchase"
+        elif mc=="PF":
+            PurchaseMethod="Purchase"
+        elif mc=="A":
+            PurchaseMethod="Purchase"
+        elif mc=="DA":
+            PurchaseMethod="Purchase"
+        elif mc=="D":
+            PurchaseMethod="Purchase"
+        elif mc=="PX":
+            PurchaseMethod="Gift"
+        elif mc=="NL":
+            PurchaseMethod="Purchase"
+        elif mc=="E":
+            PurchaseMethod="Exchange"
+        elif mc=="EP":
+            PurchaseMethod="Exchange"
+        elif mc=="M":
+            PurchaseMethod="Purchase"
+        elif mc=="MT":
+            PurchaseMethod="Purchase"
+        elif mc=="CC":
+            PurchaseMethod="Purchase"
+
+    elif client=="SC":
+        if mc=="P":
+            PurchaseMethod="Purchase"
+        elif mc=="A":
+            PurchaseMethod="Approval Plan"
+        elif mc=="SO":
+            PurchaseMethod="Purchase"
+        elif mc=="SU":
+            PurchaseMethod="Purchase"
+        elif mc=="G":
+            PurchaseMethod="Gift"
+        elif mc=="B":
+            PurchaseMethod="Purchase"
+        elif mc=="C":
+            PurchaseMethod="Purchase"
+        elif mc=="CR":
+            PurchaseMethod="Purchase"
+        elif mc=="D":
+            PurchaseMethod="Purchase"
+        elif mc=="DE":
+            PurchaseMethod="Depository"
+        elif mc=="M":
+            PurchaseMethod="Purchase"
+        elif mc=="PX":
+            PurchaseMethod="Gift"
+        elif mc=="Q":
+            PurchaseMethod="Purchase"
+        elif mc=="NL":
+            PurchaseMethod="Purchase"
+        elif mc=="DP":
+            PurchaseMethod="Purchase"
+        elif mc=="PC":
+            PurchaseMethod="Purchase"
+        elif mc=="PP":
+            PurchaseMethod="Purchase"
+        elif mc=="E":
+            PurchaseMethod="Exchange"
+        elif mc=="ES":
+            PurchaseMethod="Exchange"
+        elif mc=="F":
+            PurchaseMethod="Gift"
+    elif client=="MH":
+        if mc=="A":
+            PurchaseMethod="Approval Plan"
+        elif mc=="B":
+            PurchaseMethod="Purchase"
+        elif mc=="CC":
+            PurchaseMethod="Purchase At Vendor System"
+        elif mc=="CW":
+            PurchaseMethod="Purchase"
+        elif mc=="D":
+            PurchaseMethod="Technical"
+        elif mc=="E":
+            PurchaseMethod="Exchange"
+        elif mc=="F":
+            PurchaseMethod="Gift"
+        elif mc=="G":
+            PurchaseMethod="Gift"
+        elif mc=="P":
+            PurchaseMethod="Purchase"
+        elif mc=="PP":
+            PurchaseMethod="Purchase At Vendor System"
+        elif mc=="SO":
+            PurchaseMethod="Purchase At Vendor System"
+        elif mc=="SU":
+            PurchaseMethod="Purchase At Vendor System"
+        elif mc=="O":
+            PurchaseMethod="Technical"        
+    elif client=="AC":
+        if mc=="P":
+            PurchaseMethod="Purchase"
+        elif mc=="G":
+            PurchaseMethod="Purchase"
+        elif mc=="A":
+            PurchaseMethod="Approval Plan"
+        elif mc=="B":
+            PurchaseMethod="Purchase"
+        elif mc=="C":
+            PurchaseMethod="Purchase"
+        elif mc=="CR":
+            PurchaseMethod="Purchase"
+        elif mc=="CW":
+            PurchaseMethod="Purchase"
+        elif mc=="DE":
+            PurchaseMethod="Depository"
+        elif mc=="M":
+            PurchaseMethod="Purchase"
+        elif mc=="M":
+            PurchaseMethod="Purchase"
+        elif mc=="PX":
+            PurchaseMethod="Gift"
+        elif mc=="Q":
+            PurchaseMethod="Purchase"
+        elif mc=="NL":
+            PurchaseMethod="Purchase"
+        elif mc=="DP":
+            PurchaseMethod="Purchase"
+        elif mc=="PC":
+            PurchaseMethod="Exchange"
+        elif mc=="PP":
+            PurchaseMethod="Exchange"
+        elif mc=="E":
+            PurchaseMethod="Purchase"
+        elif mc=="ER":
+            PurchaseMethod="Purchase"
+        elif mc=="ES":
+            PurchaseMethod="Purchase"
+        elif mc=="P":
+            PurchaseMethod="Gift"
+##HAM method of acquisition mapping
+    elif client=="HC":
+        if mc=="P":
+            PurchaseMethod="Purchase"
+        elif mc=="G":
+            PurchaseMethod="Gift"
+        elif mc=="CR":
+            PurchaseMethod="Purchase"
+        elif mc=="M":
+            PurchaseMethod="Purchase"
+        elif mc=="DP":
+            PurchaseMethod="Purchase"
+        elif mc=="PP":
+            PurchaseMethod="Purchase"
+        elif mc=="F":
+            PurchaseMethod="Gift"
+        elif mc=="CW":
+            PurchaseMethod="Purchase"
+        elif mc=="O":
+            PurchaseMethod="Purchase"
+             
+    return PurchaseMethod
+
+def get_MaterialType(alepamh):
+    idorg=[]
+    search=alepamh
+    #pathPattern="/organizations-storage/organizations" #?limit=9999&query=code="
+    pathPattern="/material-types" #?limit=9999&query=code="
+    okapi_url="https://okapi-fivecolleges-sandbox.folio.ebsco.com"
+    okapi_token="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJlYnNjb01pZ3JhdGlvbiIsInVzZXJfaWQiOiIyYmQ3NTBiOS0xMzYyLTQ4MDctYmQ3My0yYmU5ZDhkNjM0MzYiLCJpYXQiOjE2MDI1NTA2MDksInRlbmFudCI6ImZzMDAwMDEwMDYifQ.jnT-wDKlXAUbAKr9L5uzESApkJuGreYKEb1RcZH2URc"
+    okapi_tenant="fs00001006"
+    okapi_headers = {"x-okapi-token": okapi_token,"x-okapi-tenant": okapi_tenant,"content-type": "application/json"}
+    length="1"
+    start="1"
+    element="mtypes"
+    query=f"query=name=="
+    #/organizations-storage/organizations?query=code==UMPROQ
+    paging_q = f"?{query}"+'"'+f"{search}"+'"'
+    path = pathPattern+paging_q
+    #data=json.dumps(payload)
+    url = okapi_url + path
+    print("Material type: "+url)
+    req = requests.get(url, headers=okapi_headers)
+    idorg=[]
+    if req.status_code != 201:
+        json_str = json.loads(req.text)
+        total_recs = int(json_str["totalRecords"])
+        if (total_recs!=0):
+            rec=json_str[element]
+            #print(rec)
+            l=rec[0]
+            if 'id' in l:
+               idorg.append(l['id'])
+               #idorg.append(l['name'])
+        if len(idorg)==0:
+            idorg=""
+
+    return idorg
+#END
+#One-Time
+
+def details(Z68_SUBSCRIPTION_DATE_FROM, Z68_SUBSCRIPTION_DATE_TO, Z68_SUBSCRIPTION_RENEW_DATE, Z68_ISBN):
+    detalles={}
+    if ((Z68_SUBSCRIPTION_DATE_FROM=="0") and (Z68_SUBSCRIPTION_DATE_TO=="0")):
+        if (Z68_ISBN):
+            index = Z68_ISBN.find("-")
+            if (index==-1):
+                #ISBN
+                detalles={"productIds": [{"productId": Z68_ISBN,"productIdType": "8261054f-be78-422d-bd51-4ed9f33c3422"}]}
+            else:
+                #ISSN
+                detalles={"productIds": [{"productId": Z68_ISBN,"productIdType": "913300b2-03ed-469a-8179-c1092c991227"}]}
+        else:
+            detalles={"productIds": []}
+
+    else:
+        subscriptionFrom=date_stamp(Z68_SUBSCRIPTION_DATE_FROM)
+        subscriptionTo=date_stamp(Z68_SUBSCRIPTION_DATE_TO)
+        expectedActivationDate=subscriptionFrom
+        if (Z68_ISBN):
+            index = Z68_ISBN.find("-")
+            if (index==-1):
+                if ((subscriptionFrom=="") and (subscriptionTo!="")):
+                    detalles={"productIds": [{"productId": Z68_ISBN,"productIdType": "8261054f-be78-422d-bd51-4ed9f33c3422"}],"subscriptionTo": subscriptionTo}
+                elif ((subscriptionFrom!="") and (subscriptionTo=="")):
+                    detalles={"productIds": [{"productId": Z68_ISBN,"productIdType": "8261054f-be78-422d-bd51-4ed9f33c3422"}],"subscriptionFrom": subscriptionFrom}
+                elif ((subscriptionFrom!="") and (subscriptionTo!="")):
+                    detalles={"productIds": [{"productId": Z68_ISBN,"productIdType": "8261054f-be78-422d-bd51-4ed9f33c3422"}],"subscriptionFrom": subscriptionFrom, "subscriptionTo": subscriptionTo}
+
+            else:
+                if ((subscriptionFrom=="") and (subscriptionTo!="")):
+                    detalles={"productIds": [{"productId": Z68_ISBN,"productIdType": "913300b2-03ed-469a-8179-c1092c991227"}],"subscriptionTo": subscriptionTo}
+                elif ((subscriptionFrom!="") and (subscriptionTo=="")):
+                    detalles={"productIds": [{"productId": Z68_ISBN,"productIdType": "913300b2-03ed-469a-8179-c1092c991227"}],"subscriptionFrom": subscriptionFrom}
+                elif ((subscriptionFrom!="") and (subscriptionTo!="")):
+                    detalles={"productIds": [{"productId": Z68_ISBN,"productIdType": "913300b2-03ed-469a-8179-c1092c991227"}],"subscriptionFrom": subscriptionFrom, "subscriptionTo": subscriptionTo}
+                
+        else:
+            if ((subscriptionFrom=="") and (subscriptionTo!="")):
+                detalles={"productIds": [],"subscriptionTo": subscriptionTo}
+            elif ((subscriptionFrom!="") and (subscriptionTo=="")):
+                detalles={"productIds": [],"subscriptionFrom": subscriptionFrom}
+            elif ((subscriptionFrom!="") and (subscriptionTo!="")):
+                detalles={"productIds": [],"subscriptionFrom": subscriptionFrom, "subscriptionTo": subscriptionTo}
+
+    return detalles
+    
+
+#def one_time(lineToread,cust):
+#    Ordarchivo=open(cust+"_orders.json", 'a')
+#    acqUnitIds=[]
+#    volumes=[]
+#    acqUnitIds[0]=acquisition_unit(cust)
+#    Acqbill=billShipto(cust)
+#    #uuid_order=str(uuid.uuid4())
+#    print("Procesing Monograph Order: ", lineToread[3])
+#    id_loc=get_locId(cust)
+#    detailsInfo= details(lineToread[21].strip(), lineToread[22].strip(), lineToread[23].strip(), lineToread[26].strip())
+#    vendor=get_OrgId(lineToread[16].strip())
+#    vendor=vendor[0]
+#    mt=get_MaterialType(lineToread[27].strip())
+#    mt=mt[0]
+
+#    #no date is not a suscription
+#    order={
+#        #"id": uuid_order,
+#        "orderType":"One-Time",
+#        "billTo": acquisition_unit(cust), 
+#        "shipTo": acquisition_unit(cust),
+#        "manualPo": False,
+#        "approved": True, #add
+#        "poNumber": str(lineToread[3].strip()),
+#        "totalItems":1,
+#        "vendor": vendor,
+#        "workflowStatus": "Open",
+#        "notes": notes_tupla(lineToread),
+#        "totalEstimatedPrice": price(lineToread[19].strip()),
+#        "acqUnitIds": acqUnitIds[0],
+#        "tags":{"tagList":["ALEPH"]},
+#        "compositePoLines": [
+#            {
+#                "acquisitionMethod": purchase_method(lineToread[15].strip()),
+#                "cancellationRestriction": False,
+#                "rush": False,
+#                "selector": "",
+#                "cost": {"currency": "USD","listUnitPrice": price(lineToread[19].strip()),"quantityPhysical": 1},
+#                "locations": [{"locationId":id_loc, "quantityPhysical":1}],
+#                "receiptStatus": "Pending",
+#                "orderFormat" : "Physical Resource",
+#                  #"details":{"receivingNote": "ABCDEFGHIJKL"},
+#                    #"poLineDescription": publisher,
+#                "poLineNumber": str(lineToread[3].strip())+"-1",
+#                "details": detailsInfo,
+#                "physical":{"createInventory":"None","volumes":volumes,"materialType": mt},
+#                    "source": "User",
+#                "titleOrPackage": lineToread[24].strip(),
+#                "contributors": [{"contributor": str(lineToread[25].strip()) ,"contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a"}],
+#                #"fundDistribution":funds_p,#[{"code":sierra_fund_code, "fundId": fund_id, "distributionType": "percentage","value": 100}], ##add
+#                "isPackage": False,
+#                "vendorDetail": {"instructions": instructionsVendor(lineToread[28].strip())},
+#                }]
+#             }
+#    json_ord = json.dumps(order)
+#    print('Datos en formato JSON', json_ord)
+#    Ordarchivo.write(json_ord+"\n")
+
+def vendorReference(vendorNote,vendorRef,cust):
+    vD={"instructions": "","refNumber": "","vendorAccount": ""}
+    if ((vendorRef!="") and (vendorNote!="")):
+        vD= {"refNumber": vendorRef,"refNumberType": "Agent's unique subscription reference number","instructions": "Ref Num: "+vendorRef}
+    elif ((vendorRef=="") and (vendorNote!="")):
+        vD= {"instructions": vendorNote}
+    elif ((vendorRef!="") and (vendorNote=="")):
+        vD= {"refNumber": vendorRef,"refNumberType": "Agent's unique subscription reference number","instructions": "Ref Num: "+vendorRef}
+    return vD
+
+def purchaseOrderComposite(lineToread,cust,orderFormat):
+    Ordarchivo=open(cust+"_orders.json", 'a')
+    acqUnitIds=[]
+    volumes=[]
+    material=[]
+    mt=""
+    renewalDate=""
+    #Acquisition address
+    Acqbill=billShipto(cust)
+    #Details
+    detailsInfo= details(lineToread[21].strip(), lineToread[22].strip(), lineToread[23].strip(), lineToread[26].strip())    
+    print(detailsInfo)
+    #locationId
+    id_loc=get_locId(cust)
+    #acquisition Unit
+    acqUnitIds.append(acquisition_unit(cust))
+    #Material Type
+    if (lineToread[27]):
+        material=(order_format(lineToread[27].strip(),cust))
+        mt=get_MaterialType(material[1])
+    else:
+        material=(order_format("unspecified",cust))
+        mt=get_MaterialType(material[1])
+
+    #Renewal Date
+    if lineToread[23].strip()!="0":
+        renewalDate=date_stamp(str(lineToread[23]))
+    #Format
+    if orderFormat!="One-time":
+       OF=order_format(lineToread[27].strip(),cust)
+       orderFormat=OF[0]
+    #Vendor UUID
+    vendor=""
+    vendor=get_OrgId(lineToread[16].strip())
+    vendor=vendor[0]
+    if vendor=="a":
+        vendor="a49e02e1-8afa-407c-aa61-99e8a69c7cac"
+    #Contributors
+    contributors=[]
+    if (lineToread[25]):
+        contributors.append({"contributor": str(lineToread[25].strip()) ,"contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a"})
+    
+    #Purchase Method
+    purchaseMethod=purchase_method(lineToread[15].strip(),cust)
+    #Notes
+    notesTupla=notes_tupla(lineToread)
+    if notesTupla=="None":
+        notesTupla=""
+    #Selector
+    Z68_TARGET_TEXT=""
+    if lineToread[15].strip():
+        Z68_TARGET_TEXT=lineToread[15].strip()
+    #Vendor Reference
+    vendordetails=vendorReference(lineToread[17].strip(),lineToread[28].strip(),cust)
+#################################################################################################
+# ONGOING  Electronic Resource
+########################################################################################  
+    if (orderFormat=="Electronic Resource"):        
+        order= {
+                #"id":polId,
+                "poNumberPrefix": cust,
+                "orderType": "Ongoing",
+                "billTo": Acqbill,
+                "shipTo": Acqbill,
+                "manualPo": False,
+                "notes": notesTupla,
+                "poNumber": lineToread[3].strip(),                
+                "reEncumber": True,
+                "ongoing": {"interval": 365, "manualRenewal": False, "isSubscription": True,"renewalDate": renewalDate, "reviewPeriod": 90},
+                "totalEstimatedPrice": price(str(lineToread[19].strip())),
+                "totalItems": 1,
+                "vendor": vendor,
+                "approved": True,
+                "workflowStatus": "Open",
+                "acqUnitIds": [acqUnitIds[0]],
+                "tags":{"tagList":["ALEPH"]},
+                "compositePoLines": [
+                    {
+                        #"id": str(uuid.uuid4()),
+                        "checkinItems": False,
+                        "acquisitionMethod": purchaseMethod,
+                        "alerts": [],
+                        "claims": [],
+                        "collection": False,
+                        "contributors": contributors,
+                        "cost": {"listUnitPriceElectronic": price(str(lineToread[19].strip())),"currency": "USD","discountType": "percentage","quantityElectronic": 1,"poLineEstimatedPrice": price(str(lineToread[19].strip()))},
+                        "details": detailsInfo,
+                        "eresource": {"activated": False,"createInventory": "None","trial": False, "accessProvider": vendor,"materialType": mt[0]},
+                        "fundDistribution": [],
+                        "isPackage": False,
+                        #"locations": [],
+                        "orderFormat": "Electronic Resource",
+                        "paymentStatus": "Payment Not Required",
+                        "physical": {"createInventory": "None","materialType": mt[0],"materialSupplier": vendor,"volumes": []},
+                        "poLineNumber": lineToread[3].strip()+"-1",
+                        "receiptStatus": "Pending",
+                        "reportingCodes": [],
+                        "rush": False,
+                        "source": "User",
+                        "selector": Z68_TARGET_TEXT,
+                        "titleOrPackage": lineToread[24],
+                        "vendorDetail": vendordetails,
+                        }
+                    ],
+                }
+############################
+# ONGOING  Physical resource
+############################  
+    elif (orderFormat=="Physical Resource"):
+        order= {
+                #"id":polId,
+                "poNumberPrefix": cust,
+                "orderType": "Ongoing",
+                "billTo": Acqbill,
+                "shipTo": Acqbill,
+                "manualPo": False,
+                "notes": notesTupla,
+                "poNumber": lineToread[3].strip(),                
+                "reEncumber": True,
+                "ongoing": {"interval": 365, "manualRenewal": False, "isSubscription": True,"renewalDate": renewalDate, "reviewPeriod": 90},
+                "totalEstimatedPrice": price(str(lineToread[19].strip())),
+                "totalItems": 1,
+                "vendor": vendor,
+                "approved": True,
+                "workflowStatus": "Open",
+                "acqUnitIds": [acqUnitIds[0]],
+                "tags":{"tagList":["ALEPH"]},
+                "compositePoLines": [
+                    {
+                        #"id": str(uuid.uuid4()),
+                        "checkinItems": False,
+                        "acquisitionMethod": purchaseMethod,
+                        "alerts": [],
+                        "claims": [],
+                        "collection": False,
+                        "contributors": contributors,
+                        "cost": {"listUnitPrice": price(str(lineToread[19].strip())),"currency": "USD","discountType": "percentage","quantityPhysical": 1,"poLineEstimatedPrice": price(str(lineToread[19].strip()))},
+                        "details": detailsInfo,
+                        "eresource": {"activated": False,"createInventory": "None","trial": False, "accessProvider": vendor,"materialType": mt[0]},
+                        #"fundDistribution": [],
+                        "isPackage": False,
+                        "locations": [{"locationId": id_loc,"quantity": 1,"quantityPhysical": 1}],
+                        "orderFormat": "Physical Resource",
+                        "paymentStatus": "Payment Not Required",
+                        "physical": {"createInventory": "None","materialType": mt[0],"materialSupplier": vendor,"volumes": []},
+                        "poLineNumber": lineToread[3].strip()+"-1",
+                        "receiptStatus": "Pending",
+                        "reportingCodes": [],
+                        "rush": False,
+                        "source": "User",
+                        "selector": Z68_TARGET_TEXT,
+                        "titleOrPackage": lineToread[24],
+                        "vendorDetail": vendordetails,
+                        }
+                    ],
+                }
+############################
+# ONGOING  P/M Mix
+############################      
+                 
+    elif (orderFormat=="P/E Mix"):
+            order= {
+                #"id":polId,
+                "poNumberPrefix": cust,
+                "orderType": "Ongoing",
+                "billTo": Acqbill,
+                "shipTo": Acqbill,
+                "manualPo": False,
+                "notes": notesTupla,
+                "poNumber": lineToread[3].strip(),                
+                "reEncumber": True,
+                "ongoing": {"interval": 365, "manualRenewal": False, "isSubscription": True,"renewalDate": renewalDate, "reviewPeriod": 90},
+                "totalEstimatedPrice": price(str(lineToread[19].strip())),
+                "totalItems": 1,
+                "vendor": vendor,
+                "approved": True,
+                "workflowStatus": "Open",
+                "acqUnitIds": [acqUnitIds[0]],
+                "tags":{"tagList":["ALEPH"]},
+                "compositePoLines": [
+                    {
+                        #"id": str(uuid.uuid4()),
+                        "checkinItems": False,
+                        "acquisitionMethod": purchaseMethod,
+                        "alerts": [],
+                        "claims": [],
+                        "collection": False,
+                        "contributors": contributors,
+                        "cost": {"listUnitPrice": price(str(lineToread[19].strip())),"listUnitPriceElectronic": price(str(lineToread[19].strip())),"currency": "USD","discountType": "percentage","quantityPhysical": 1,"quantityElectronic": 1,"poLineEstimatedPrice": price(str(lineToread[19].strip()))},
+                        "details": detailsInfo,
+                        "eresource": {"activated": False,"createInventory": "None","trial": False, "accessProvider": vendor,"materialType": mt[0]},
+                        #"fundDistribution": [],
+                        "isPackage": False,
+                        "locations": [{"locationId": id_loc,"quantity": 2,"quantityPhysical": 1, "quantityElectronic": 1,}],
+                        "orderFormat": "P/E Mix",
+                        "paymentStatus": "Payment Not Required",
+                        "physical": {"createInventory": "None","materialType": mt[0],"materialSupplier": vendor,"volumes": []},
+                        "poLineNumber": lineToread[3].strip()+"-1",
+                        "receiptStatus": "Pending",
+                        "reportingCodes": [],
+                        "rush": False,
+                        "source": "User",
+                        "selector": Z68_TARGET_TEXT,
+                        "titleOrPackage": lineToread[24],
+                        "vendorDetail": vendordetails,
+                        }
+                    ],
+                }
+    elif (orderFormat=="One-time"):
+        order={
+            #"id": uuid_order,
+            "poNumberPrefix": cust,
+            "orderType":"One-Time",
+            "billTo": Acqbill, 
+            "shipTo": Acqbill,
+            "manualPo": False,
+            "approved": True, #add
+            "poNumber": str(lineToread[3].strip()),
+            "totalItems":1,
+            "vendor": vendor,
+            "workflowStatus": "Open",
+            "notes": notesTupla,
+            "totalEstimatedPrice": price(lineToread[19].strip()),
+            "acqUnitIds": [acqUnitIds[0]],
+            "tags":{"tagList":["ALEPH"]},
+            "compositePoLines": [
+                {
+                    "acquisitionMethod": purchaseMethod,
+                    "cancellationRestriction": False,
+                    "rush": False,
+                    "selector": "",
+                    "cost": {"currency": "USD","listUnitPrice": price(lineToread[19].strip()),"quantityPhysical": 1},
+                    "locations": [{"locationId":id_loc, "quantityPhysical":1}],
+                    "receiptStatus": "Pending",
+                    "orderFormat" : "Physical Resource",
+                      #"details":{"receivingNote": "ABCDEFGHIJKL"},
+                        #"poLineDescription": publisher,
+                    "poLineNumber": str(lineToread[3].strip())+"-1",
+                    "details": detailsInfo,
+                    "physical":{"createInventory":"None","volumes":volumes,"materialType": mt[0]},
+                    "source": "User",
+                    "selector": Z68_TARGET_TEXT,
+                    "titleOrPackage": lineToread[24].strip(),
+                    "contributors": [{"contributor": str(lineToread[25].strip()) ,"contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a"}],
+                    #"fundDistribution":funds_p,#[{"code":sierra_fund_code, "fundId": fund_id, "distributionType": "percentage","value": 100}], ##add
+                    "isPackage": False,
+                    "vendorDetail": vendordetails,
+                    }]
+                 }
+         
+    #json_ord = json.dumps(order,indent=2)
+    json_ord = json.dumps(order)
+    print('Datos en formato JSON', json_ord)
+    Ordarchivo.write(json_ord+"\n")
+###############################################
+##
+##
+##############################################
+def Orders_AlephToFolio(NamefileToRead, NamefileToPrint):
+    org=NamefileToPrint 
+    m=0
+    o=0
+    s=0
+    count=1
+    f = open("Error_Original_EBSCO_Recurring_Orders.txt", "a")
+    with open(NamefileToRead, encoding="utf-8") as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter='|')
+        line_count = 0
+        for row in csv_reader:
+            if count==2:
+                pass
+                print("stop")
+            if line_count == 0:
+                print(f'Column names are {", ".join(row)}')
+                line_count += 1
+            else:
+                
+                orderType="OT"
+                count+=1
+                print("\n"+"##############   Record No.", str(count)+"     ##############")
+
+                print(f'\t{row[0]} working with Purchase Number: {row[3]} title {row[24]} order type {row[2]}, {row[26]}')
+                if row[1].strip()=="S":
+                     print("Ongoing")
+                     s+=1
+                     orderType=""
+                     purchaseOrderComposite(row,NamefileToPrint,orderType)
+                elif row[1].strip()=="O":
+                     print("Ongoing")
+                     o+=1
+                     orderType=""
+                     purchaseOrderComposite(row,NamefileToPrint,orderType)
+                elif row[1].strip()=="M":
+                     print("One-Time")
+                     m+=1
+                     orderType="One-time"
+                     purchaseOrderComposite(row,NamefileToPrint,orderType)
+                elif row[1].strip()=="P":
+                     print("One-Time")
+                     m+=1
+                     orderType="One-time"
+                     purchaseOrderComposite(row,NamefileToPrint,orderType)
+                else:
+                   print("undefined Aleph Order Type")
+            line_count += 1
+
+        print(f'Processed {line_count} lines.')
+        f.write(str(m),str(s), str(o))
+        
+##end
+
+if __name__ == "__main__":
+    """This is the Starting point for the script"""
+    customerName="UM"
+    Orders_AlephToFolio("Orders/UMA_ORDERS_z13.dsv",customerName)
+
+    
+    #customerName="AC"
+    #Orders_AlephToFolio("Orders/amh_orders_z13.dsv",customerName)
+
+    #customerName="SC"
+    #Orders_AlephToFolio("Orders/smith_orders_z13.dsv",customerName)
+
+    #customerName="MH"
+    #Orders_AlephToFolio("Orders/mh_orders_z13.dsv",customerName)
+
+    #customerName="HC"
+    #Orders_AlephToFolio("Orders/HC_orders_z13.dsv",customerName)
